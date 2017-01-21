@@ -1,0 +1,213 @@
+/*
+This program takes text as input and outputs the morse code of said text
+*/
+
+#include <SPI.h>
+#include <LiquidCrystal.h>
+
+#define morseElements 5
+#define lengthOfAlphabet 26
+
+int led = 13, redPin = 12, greenPin = 11, bluePin = 10, morseUnit = 500;
+
+// initialize the library with the numbers of the interface pins
+LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+
+char * message = "Sam I am";
+
+int alphabet[lengthOfAlphabet][morseElements] = {
+    {1, 1, 0, 0, 0}, //a
+    {0, 1, 3, 0, 0}, //b
+    {0, 1, 1, 1, 1}, //c
+    {0, 1, 2, 0, 0}, //d
+    {1, 0, 0, 0, 0}, //e
+    {2, 1, 1, 0, 0}, //f
+    {0, 2, 1, 0, 0}, //g
+    {4, 0, 0, 0, 0}, //h
+    {2, 0, 0, 0, 0}, //i
+    {1, 3, 0, 0, 0}, //j
+    {0, 1, 1, 1, 0}, //k
+    {1, 1, 2, 0, 0}, //l
+    {0, 2, 0, 0, 0}, //m
+    {0, 1, 1, 0, 0}, //n
+    {0, 3, 0, 0, 0}, //o
+    {1, 2, 1, 0, 0}, //p
+    {0, 2, 1, 1, 0}, //q
+    {1, 1, 1, 0, 0}, //r
+    {3, 0, 0, 0, 0}, //s
+    {0, 1, 0, 0, 0}, //t
+    {2, 1, 0, 0, 0}, //u
+    {3, 1, 0, 0, 0}, //v
+    {1, 2, 0, 0, 0}, //w
+    {0, 1, 2, 1, 0}, //x
+    {0, 1, 1, 2, 0}, //y
+    {2, 2, 0, 0, 0}  //z
+};
+
+int arrayLength = strlen(message);
+
+int * dot1,
+    * dash1,
+    * dot2,
+    * dash2,
+    * dot3;
+
+char a = 'a';
+
+void setup() {
+    lcd.begin(16, 2);              // start the library
+    lcd.print(message);
+ 
+    Serial.begin(9600); 
+    while (!Serial) {
+        ; // wait for serial port to connect. Needed for Leonardo only
+    }
+    Serial.println(message);
+    //Serial.println(arrayLength);
+    pinMode(led, OUTPUT);
+    pinMode(redPin, OUTPUT);
+    pinMode(greenPin, OUTPUT);
+    pinMode(bluePin, OUTPUT);
+}
+
+void loop() {
+    if(Serial.available() > 0){
+        lcd.clear();
+        lcd.setCursor(0,0);
+        String newMessage = "";
+        while (Serial.available() > 0){ // Don't read unless you know there is data
+            char inChar = Serial.read(); // Read a character
+            newMessage += inChar;   
+            lcd.write(inChar);
+        }
+        Serial.println(newMessage);
+        arrayLength = strlen(newMessage.c_str());
+        message = malloc(arrayLength*sizeof(char));
+        strcpy(message, newMessage.c_str());
+        delay(morseUnit);
+    }
+
+    /*lcd.clear();
+        lcd.setCursor(0,0);
+    lcd.write("****************");
+        lcd.setCursor(0,1);
+    lcd.write("****************");*/
+    for(int j=0; j < arrayLength; ++j){
+        int aleph = tolower(message[j]) - a, 
+            num = message[j] - '0';
+        if(message[j] - ' ' == 0){
+            Serial.print("   ");
+            delay(7*morseUnit);
+        }
+        else if(message[j] - '\n' == 0){
+            Serial.println();
+        }
+        else if(aleph > -1 && aleph < lengthOfAlphabet){
+            for(int k=0; k < morseElements; ++k){
+                int numOchars = alphabet[aleph][k];
+                if(k%2 == 0){
+                    //dot
+                    for(int i=0; i < numOchars; ++i){
+                        Serial.print(".");
+                        
+                        //lcd.display();
+                        digitalWrite(redPin, 0);
+                        digitalWrite(bluePin, 64);
+                        digitalWrite(greenPin, 128);
+                        delay(morseUnit);
+                        //lcd.noDisplay();
+                        digitalWrite(redPin, 64);
+                        digitalWrite(bluePin, 128);
+                        digitalWrite(greenPin, 0);
+                        delay(morseUnit);
+                    }
+                }
+                else{
+                    //dash
+                    for(int i=0; i < numOchars; ++i){
+                        Serial.print("-");
+                        
+                        //lcd.display();
+                        digitalWrite(redPin, 128);
+                        digitalWrite(bluePin, 0);
+                        digitalWrite(greenPin, 64);
+                        delay(3*morseUnit);
+                        //lcd.noDisplay();
+                        digitalWrite(redPin, 0);
+                        digitalWrite(bluePin, 64);
+                        digitalWrite(greenPin, 128);
+                        delay(morseUnit);
+                    }
+                }
+            }
+            delay(morseUnit);
+        }
+        else if(num > - 1 && num < 6){
+            for(int i=0; i<num; ++i){
+                //dot
+                Serial.print(".");
+                
+                //lcd.display();
+                digitalWrite(redPin, 64);
+                digitalWrite(bluePin, 128);
+                digitalWrite(greenPin, 0);
+                delay(morseUnit);
+                //lcd.noDisplay();
+                digitalWrite(redPin, 128);
+                digitalWrite(bluePin, 0);
+                digitalWrite(greenPin, 64);
+                delay(morseUnit);
+            }
+            for(int i=0; i<5-num; ++i){
+                //dash
+                Serial.print("-");
+                
+                //lcd.display();
+                digitalWrite(redPin, 0);
+                digitalWrite(bluePin, 64);
+                digitalWrite(greenPin, 128);
+                delay(3*morseUnit);
+                //lcd.noDisplay();
+                digitalWrite(redPin, 64);
+                digitalWrite(bluePin, 128);
+                digitalWrite(greenPin, 0);
+                delay(morseUnit);
+            }
+        }
+        else if(num > 5 && num < 10){
+            for(int i=0; i<5-num; ++i){
+                //dash
+                Serial.print("-");
+                
+                //lcd.display();
+                digitalWrite(redPin, 128);
+                digitalWrite(bluePin, 0);
+                digitalWrite(greenPin, 64);
+                delay(3*morseUnit);
+                //lcd.noDisplay();
+                digitalWrite(redPin, 0);
+                digitalWrite(bluePin, 64);
+                digitalWrite(greenPin, 128);
+                delay(morseUnit);
+            }
+            for(int i=0; i<10-num; ++i){
+                //dot
+                Serial.print(".");
+                
+                //lcd.display();
+                digitalWrite(redPin, 64);
+                digitalWrite(bluePin, 128);
+                digitalWrite(greenPin, 0);
+                delay(morseUnit);
+                //lcd.noDisplay();
+                digitalWrite(redPin, 128);
+                digitalWrite(bluePin, 0);
+                digitalWrite(greenPin, 64);
+                delay(morseUnit);
+            }
+        }    
+        Serial.print(" ");
+        delay(3*morseUnit);
+    }
+    Serial.println();
+}
